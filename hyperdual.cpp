@@ -1,212 +1,113 @@
-/*
- * Class: hyperdual
- * 
- * Implementation of hyper-dual numbers
- *
- * Written by: Jeffrey A. Fike
- * Stanford University, Department of Aeronautics and Astronautics
- * 
- * Copyright (c) 2006 Jeffrey A. Fike
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- */
-
-#ifndef _hyperdual_h
-#define _hyperdual_h
-
-#include <iostream>
-#include <math.h>
-using namespace std;
-
-class hyperdual{
-	double f0,f1,f2,f12;
-public:
-	//creation operators and function to manually set values
-	hyperdual();
-	hyperdual(double x1,double x2,double x3,double x4);
-	hyperdual(double x1);
-	void setvalues(double x1,double x2,double x3,double x4);
-
-	//examine values
-	void view(void);
-	double real(void);
-	double eps1(void);
-	double eps2(void);
-	double eps1eps2(void);
-	friend ostream& operator<<(ostream& output, const hyperdual& rhs);
-
-	//basic manipulation
-	hyperdual operator+ () const;
-	hyperdual operator+ (const hyperdual rhs) const;
-	friend hyperdual operator+ (const double lhs, const hyperdual rhs);
-	hyperdual operator- () const;
-	hyperdual operator- (const hyperdual rhs) const;
-	friend hyperdual operator- (const double lhs, const hyperdual rhs);
-	hyperdual operator* (const hyperdual rhs)const;
-	friend hyperdual operator* (const double lhs, const hyperdual rhs);
-	friend hyperdual operator/ (const hyperdual lhs, const hyperdual rhs);
-	friend hyperdual operator/ (const double lhs, const hyperdual rhs);
-	friend hyperdual operator/ (const hyperdual lhs, const double rhs);
-	hyperdual& operator+= (hyperdual rhs);
-	hyperdual& operator-= (hyperdual rhs);
-	hyperdual& operator*= (hyperdual rhs);
-	hyperdual& operator*= (double rhs);
-	hyperdual& operator/= (double rhs);
-
-	//math.h functions
-	friend hyperdual pow (hyperdual x, double a);
-	friend hyperdual pow (hyperdual x, hyperdual a);
-	friend hyperdual exp(hyperdual x);
-	friend hyperdual log(hyperdual x);
-	friend hyperdual sin(hyperdual x);
-	friend hyperdual cos(hyperdual x);
-	friend hyperdual tan(hyperdual x);
-	friend hyperdual asin(hyperdual x);
-	friend hyperdual acos(hyperdual x);
-	friend hyperdual atan(hyperdual x);
-	friend hyperdual sqrt(hyperdual x);
-	friend hyperdual fabs(hyperdual x);
-	friend hyperdual max(hyperdual x1, hyperdual x2);
-	friend hyperdual max(hyperdual x1, double x2);
-	friend hyperdual max(double x1, hyperdual x2);
-	friend hyperdual min(hyperdual x1, hyperdual x2);
-	friend hyperdual min(hyperdual x1, double x2);
-	friend hyperdual min(double x1, hyperdual x2);
-
-	//comparisons
-	friend bool operator> (hyperdual lhs, hyperdual rhs);
-	friend bool operator> (double lhs, hyperdual rhs);
-	friend bool operator> (hyperdual lhs, double rhs);
-	friend bool operator>= (hyperdual lhs, hyperdual rhs);
-	friend bool operator>= (double lhs, hyperdual rhs);
-	friend bool operator>= (hyperdual lhs, double rhs);
-	friend bool operator< (hyperdual lhs, hyperdual rhs);
-	friend bool operator< (double lhs, hyperdual rhs);
-	friend bool operator< (hyperdual lhs, double rhs);
-	friend bool operator<= (hyperdual lhs, hyperdual rhs);
-	friend bool operator<= (double lhs, hyperdual rhs);
-	friend bool operator<= (hyperdual lhs, double rhs);
-	friend bool operator== (hyperdual lhs, hyperdual rhs);
-	friend bool operator== (double lhs, hyperdual rhs);
-	friend bool operator== (hyperdual lhs, double rhs);
-	friend bool operator!= (hyperdual lhs, hyperdual rhs);
-	friend bool operator!= (double lhs, hyperdual rhs);
-	friend bool operator!= (hyperdual lhs, double rhs);
-};
-
+#include <cstdio>
+#include "hyperdual.hpp"
 
 hyperdual::hyperdual()
 {
-	f0 = 0.0;
-	f1 = 0.0;
-	f2 = 0.0;
-	f12 = 0.0;
+     f0 = 0.0;
+     f1 = 0.0;
+     f2 = 0.0;
+     f12 = 0.0;
 }
-hyperdual::hyperdual(double x1,double x2,double x3,double x4)
+
+hyperdual::hyperdual(double x1, double x2, double x3, double x4)
 {
-	f0 = x1;
-	f1 = x2;
-	f2 = x3;
-	f12 = x4;
+     f0 = x1;
+     f1 = x2;
+     f2 = x3;
+     f12 = x4;
 }
+
 hyperdual::hyperdual(double x1)
 {
-	f0 = x1;
-	f1 = 0.0;
-	f2 = 0.0;
-	f12 = 0.0;
+     f0 = x1;
+     f1 = 0.0;
+     f2 = 0.0;
+     f12 = 0.0;
 }
 void hyperdual::setvalues(double x1,double x2,double x3,double x4)
 {
-	f0 = x1;
-	f1 = x2;
-	f2 = x3;
-	f12 = x4;
+     f0 = x1;
+     f1 = x2;
+     f2 = x3;
+     f12 = x4;
 }
 
 void hyperdual::view(void)
 {
-	printf("%g  +  %g epsilon1  +  %g epsilon2  +  %g epsilon1 epsilon2\n",f0,f1,f2,f12);
+     printf("%g + %g epsilon1 + %g epsilon2 + %g epsilon1 epsilon2\n", f0, f1, f2, f12);
 }
+
 double hyperdual::real(void)
 {
-	return f0;
+     return f0;
 }
+
 double hyperdual::eps1(void)
 {
-	return f1;
+     return f1;
 }
+
 double hyperdual::eps2(void)
 {
-	return f2;
+     return f2;
 }
+
 double hyperdual::eps1eps2(void)
 {
-	return f12;
+     return f12;
 }
-ostream& operator<<(ostream& output, const hyperdual& rhs)
+
+std::ostream& operator<<(std::ostream& output, const hyperdual& rhs)
 {
-        output << "(" << rhs.f0 << ","<< rhs.f1 << ","<< rhs.f2 << ","<< rhs.f12 << ")";
-        return output;
+     output << "(" << rhs.f0 << ","<< rhs.f1 << ","<< rhs.f2 << ","<< rhs.f12 << ")";
+     return output;
 }
 
 hyperdual hyperdual::operator+ () const
 {
-	return *this;
+     return *this;
 }
+
 hyperdual hyperdual::operator+ (const hyperdual rhs) const
 {
-	hyperdual temp;
-	temp.f0 = f0 + rhs.f0;
-	temp.f1 = f1 + rhs.f1;
-	temp.f2 = f2 + rhs.f2;
-	temp.f12 = f12 + rhs.f12;
-	return temp;
+     hyperdual temp;
+     temp.f0 = f0 + rhs.f0;
+     temp.f1 = f1 + rhs.f1;
+     temp.f2 = f2 + rhs.f2;
+     temp.f12 = f12 + rhs.f12;
+     return temp;
 }
+
 hyperdual operator+ (const double lhs, const hyperdual rhs)
 {
-	hyperdual temp;
-	temp.f0 = lhs + rhs.f0;
-	temp.f1 = rhs.f1;
-	temp.f2 = rhs.f2;
-	temp.f12 = rhs.f12;
-	return temp;
+     hyperdual temp;
+     temp.f0 = lhs + rhs.f0;
+     temp.f1 = rhs.f1;
+     temp.f2 = rhs.f2;
+     temp.f12 = rhs.f12;
+     return temp;
 }
+
 hyperdual hyperdual::operator- () const
 {
-	hyperdual temp;
-	temp.f0 = -f0;
-	temp.f1 = -f1;
-	temp.f2 = -f2;
-	temp.f12 = -f12;
-	return temp;
+     hyperdual temp;
+     temp.f0 = -f0;
+     temp.f1 = -f1;
+     temp.f2 = -f2;
+     temp.f12 = -f12;
+     return temp;
 }
+
 hyperdual hyperdual::operator- (const hyperdual rhs) const
 {
-	hyperdual temp;
-	temp.f0 = f0 - rhs.f0;
-	temp.f1 = f1 - rhs.f1;
-	temp.f2 = f2 - rhs.f2;
-	temp.f12 = f12 - rhs.f12;
-	return temp;
+     hyperdual temp;
+     temp.f0 = f0 - rhs.f0;
+     temp.f1 = f1 - rhs.f1;
+     temp.f2 = f2 - rhs.f2;
+     temp.f12 = f12 - rhs.f12;
+     return temp;
 }
+
 hyperdual operator- (const double lhs, const hyperdual rhs)
 {
 	hyperdual temp;
@@ -259,6 +160,7 @@ hyperdual operator/ (const hyperdual lhs, const double rhs)
 	temp.f12 = inv*lhs.f12;
 	return temp;
 }
+
 hyperdual& hyperdual::operator+= (hyperdual rhs)
 {
 	f0 += rhs.f0;
@@ -267,6 +169,7 @@ hyperdual& hyperdual::operator+= (hyperdual rhs)
 	f12 += rhs.f12;
 	return *this;
 }
+
 hyperdual& hyperdual::operator-= (hyperdual rhs)
 {
 	f0 -= rhs.f0;
@@ -275,6 +178,7 @@ hyperdual& hyperdual::operator-= (hyperdual rhs)
 	f12 -= rhs.f12;
 	return *this;
 }
+
 hyperdual& hyperdual::operator*= (hyperdual rhs)
 {
 	double tf0,tf1,tf2,tf12;
@@ -288,6 +192,7 @@ hyperdual& hyperdual::operator*= (hyperdual rhs)
 	f12 = tf0*rhs.f12 + tf1*rhs.f2 + tf2*rhs.f1 + tf12*rhs.f0;
 	return *this;
 }
+
 hyperdual& hyperdual::operator*= (double rhs)
 {
 	f0 *= rhs;
@@ -296,6 +201,7 @@ hyperdual& hyperdual::operator*= (double rhs)
 	f12 *= rhs;
 	return *this;
 }
+
 hyperdual& hyperdual::operator/= (double rhs)
 {
 	f0 /= rhs;
@@ -568,6 +474,3 @@ bool operator!= (hyperdual lhs, double rhs)
 {
 	return (lhs.f0 != rhs);
 }
-
-#endif
-
