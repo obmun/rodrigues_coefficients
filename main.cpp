@@ -1,3 +1,20 @@
+/**
+ * @file
+ * @brief Evaluation of implementation of Rodrigues formula's trigonometric a_i coefficients using
+ * hyper-dual numeric derivation.
+ *
+ * This file implements the a_i expressions (first equations of section 2.2 of the paper "On the
+ * differentiation of the Rodrigues formula and its significance for the vector-like
+ * parameterization of Reissner–Simo beam theory") using Fike's hyper-dual numerical derivation
+ * method.
+ *
+ * For comparison, implements the expressions as well directly using the symbolic expressions for
+ * the first order and second order derivatives.
+ *
+ * This code is written in C++11 and only makes uses of std library functions and the included
+ * hyper-dual class as implemented by Fike. Build system is CMake.
+ */
+
 #include <algorithm>
 #include <cmath>
 #include <functional>
