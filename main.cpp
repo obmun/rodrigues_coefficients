@@ -16,6 +16,7 @@
  */
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <functional>
 #include <iomanip>
@@ -24,10 +25,20 @@
 #include <vector>
 #include "hyperdual.hpp"
 
+constexpr unsigned long int factorial(unsigned long int n)
+{
+    return n <= 1 ? 1 : (n * factorial(n - 1));
+}
+
+/**
+ *
+ * b_i = \frac{1}{\theta} \diff{a_i(\theta)}{\theta}
+ * c_i = \frac{1}{\theta} \diff{b_i(\theta)}{\theta}
+ */
 namespace rodrigues_formula
 {
      
-     enum class CalculationMode { Direct, NumericHyperDual };
+     enum class CalculationMode { Direct, NumericHyperDual, SeriesExpansion };
     
      namespace detail
      {
@@ -62,7 +73,10 @@ namespace rodrigues_formula
 	  TrigonometricCoeffs() :
 	       a0(m_impl),
 	       a1(m_impl),
-	       a2(m_impl) {
+	       a2(m_impl),
+	       b0(m_impl),
+	       b1(m_impl),
+	       b2(m_impl) {
 	  }
 
 	  Impl &impl() {
@@ -105,9 +119,49 @@ namespace rodrigues_formula
 	       const TrigonometricCoeffs::Impl &m_impl;
 	  };
 
+	  class B0
+	  {
+	  public:
+	       B0(const TrigonometricCoeffs::Impl &impl) : m_impl(impl) { }
+	       T operator()(T theta) const {
+		    return m_impl.b0(theta);
+	       }
+
+	  protected:
+	       const TrigonometricCoeffs::Impl &m_impl;
+	  };
+
+	  class B1
+	  {
+	  public:
+	       B1(const TrigonometricCoeffs::Impl &impl) : m_impl(impl) { }
+	       T operator()(T theta) const {
+		    return m_impl.b1(theta);
+	       }
+
+	  protected:
+	       const TrigonometricCoeffs::Impl &m_impl;
+	  };
+
+	  class B2
+	  {
+	  public:
+	       B2(const TrigonometricCoeffs::Impl &impl) : m_impl(impl) { }
+	       T operator()(T theta) const {
+		    return m_impl.b2(theta);
+	       }
+
+	  protected:
+	       const TrigonometricCoeffs::Impl &m_impl;
+	  };
+
+
 	  const A0 a0;
 	  const A1 a1;
 	  const A2 a2;
+	  const B0 b0;
+	  const B1 b1;
+	  const B2 b2;
 
 	  T d(const A0 &, T theta) const {
 	       return m_impl.da0(theta);
@@ -175,6 +229,24 @@ namespace rodrigues_formula
 	       static T d2a2(T theta) {
 		    return ((pow(theta, 2) - 6) * cos(theta) - 4 * theta * sin(theta) + 6) / pow(theta, 4);
 	       }
+
+	       static T b0(T theta) {
+		    return -sin(theta) / theta;
+	       }
+
+	       /**
+		* b_1 = \frac{1}{\theta} \diff{a_1(\theta)}{\theta}
+		*/
+	       static T b1(T theta) {
+		    return (theta * cos(theta) - sin(theta)) / pow(theta, 3);
+	       }
+
+	       /**
+		* b_2 = \frac{1}{\theta} \diff{a_2(\theta)}{\theta}
+		*/
+	       static T b2(T theta) {
+		    return (theta * sin(theta) + T(2) * cos(theta) - T(2)) / pow(theta, 4);
+	       }
 	  };
 
 	  template <>
@@ -229,6 +301,18 @@ namespace rodrigues_formula
 		    return _a2(theta).eps1eps2() / (m_h1 * m_h2);
 	       }
 
+	       RealType b0(RealType theta) const {
+		    return da0(theta) / theta;
+	       }
+
+	       RealType b1(RealType theta) const {
+		    return da1(theta) / theta;
+	       }
+
+	       RealType b2(RealType theta) const {
+		    return da2(theta) / theta;
+	       }
+
 	  protected:
 	       RealType m_h1, m_h2;
 
@@ -252,6 +336,86 @@ namespace rodrigues_formula
 
 	  };
 
+	  template <typename T>
+	  class TrigonometricCoeffsImpl<T, CalculationMode::SeriesExpansion>
+	  {
+	  public:
+	       static T a0(T theta) {
+		    return s_direct.a0(theta);
+	       }
+	       
+	       static T a1(T theta) {
+		    if (theta > S_THRESHOLD) return s_direct.a1(theta);
+		    return ai(1, theta);
+		    
+	       }
+
+	       static T a2(T theta) {
+		    if (theta > S_THRESHOLD) return s_direct.a2(theta);
+		    return ai(2, theta);
+	       }
+
+	       static T b0(T theta) {
+		    if (theta > S_THRESHOLD) return s_direct.b0(theta);
+		    return bi(0, theta);
+	       }
+
+	       static T b1(T theta) {
+		    if (theta > S_THRESHOLD) return s_direct.b1(theta);
+		    return bi(1, theta);
+	       }
+
+	       static T b2(T theta) {
+		    if (theta > S_THRESHOLD) return s_direct.b2(theta);
+		    return bi(2, theta);
+	       }
+
+	  protected:
+	       static constexpr T S_ONE = 1.0;
+	       static constexpr T S_THRESHOLD = 0.5;
+	       static const int N_FACTORIALS = 15;
+	       static const std::array<T,N_FACTORIALS> S_INV_FACTORIALS;
+	       static class TrigonometricCoeffsImpl<T, CalculationMode::Direct> s_direct;
+
+	       static T ai(unsigned int i, T theta) {
+		    assert(i < 4);
+		    constexpr int N_STEPS = 6;
+		    T s[N_STEPS] = { 1, -pow(theta, 2), pow(theta, 4), pow(theta, 6), pow(theta, 8), pow(theta, 10) };
+		    for (unsigned int j = 0; j < N_STEPS; j++) {
+			 s[j] *= S_INV_FACTORIALS[2*j + i];
+		    }
+		    T res = 0.;
+		    for (unsigned int j = 0; j < N_STEPS; j++)
+		    {
+			 res += s[j];
+		    }
+		    return res;
+	       }
+	       
+	       static T bi(unsigned int i, T theta) {
+		    assert(i < 3);
+		    constexpr int N_STEPS = 6;
+		    T s[N_STEPS] = { -2, 4*pow(theta, 2), -6*pow(theta, 4), 8*pow(theta, 6), -10*pow(theta, 8), 12*pow(theta, 10) };
+		    for (unsigned int j = 0; j < N_STEPS; j++)
+		    {
+			 s[j] *= S_INV_FACTORIALS[2 + 2*j + i];
+			 // Max factorial idx: 2 + 2*5 + 3 = 15 -> fits
+		    }
+		    T res = 0.;
+		    for (unsigned int j = 0; j < N_STEPS; j++)
+		    {
+			 res += s[j];
+		    }
+		    return res;
+	       }
+	  };
+
+	  template <typename T> std::array<T,TrigonometricCoeffsImpl<T, CalculationMode::SeriesExpansion>::N_FACTORIALS> const
+	  TrigonometricCoeffsImpl<T, CalculationMode::SeriesExpansion>::S_INV_FACTORIALS =
+	  { S_ONE / factorial(0), S_ONE / factorial(1), S_ONE / factorial(2), S_ONE / factorial(3), S_ONE / factorial(4),
+	    S_ONE / factorial(5), S_ONE / factorial(6), S_ONE / factorial(7), S_ONE / factorial(8), S_ONE / factorial(9),
+	    S_ONE / factorial(10), S_ONE / factorial(11), S_ONE / factorial(12), S_ONE / factorial(13), S_ONE / factorial(14) };
+
      }
 
 }
@@ -262,12 +426,15 @@ int main(int argc, char *argv[])
 {
      using namespace std::placeholders;
 
-     typedef rf::TrigonometricCoeffs< double, rf::CalculationMode::Direct > TCsDir;
-     typedef rf::TrigonometricCoeffs< double, rf::CalculationMode::NumericHyperDual > TCsHD;
+     typedef float RealType;
 
-     const double STEP = 1e-7;
-     const int N_EVAL_PTS = 21;
-     std::vector<double> eval_pts;
+     typedef rf::TrigonometricCoeffs<RealType, rf::CalculationMode::Direct> TCsDir;
+     typedef rf::TrigonometricCoeffs<double, rf::CalculationMode::NumericHyperDual> TCsHD;
+     typedef rf::TrigonometricCoeffs<RealType, rf::CalculationMode::SeriesExpansion> TCsSE;
+
+     const RealType STEP = 1e-3;
+     const int N_EVAL_PTS = 51;
+     std::vector<RealType> eval_pts;
      int m;
      unsigned int i;
      for (m = - N_EVAL_PTS / 2, i = 0;
@@ -279,29 +446,47 @@ int main(int argc, char *argv[])
 
      TCsDir tcs_dir;
      TCsHD tcs_hd;
+     TCsSE tcs_se;
      auto tcs_hd_impl = tcs_hd.impl();
      tcs_hd_impl.set_steps(1e-14, 1e-14);
 
      // a_0(0.0) -> tcs_dir.a0(0.0);
 
-     std::map<std::string, std::function<double(double)>> derivs;
-     derivs["d(a0)/dtheta"] = [&](double v) { return tcs_dir.d(tcs_dir.a0, v); };
-     derivs["d(a1)/dtheta"] = [&](double v) { return tcs_dir.d(tcs_dir.a1, v); };
-     derivs["d(a2)/dtheta"] = [&](double v) { return tcs_dir.d(tcs_dir.a2, v); };
-     derivs["d^2(a0)/dtheta^2"] = [&](double v) { return tcs_dir.d2(tcs_dir.a0, v); };
-     derivs["d^2(a1)/dtheta^2"] = [&](double v) { return tcs_dir.d2(tcs_dir.a1, v); };
-     derivs["d^2(a2)/dtheta^2"] = [&](double v) { return tcs_dir.d2(tcs_dir.a2, v); };
+     std::map<std::string, std::function<RealType(RealType)>> derivs;
+     derivs["a0"] = tcs_dir.a0;
+     derivs["a1"] = tcs_dir.a1;
+     derivs["a2"] = tcs_dir.a2;
+     derivs["b0"] = tcs_dir.b0;
+     derivs["b1"] = tcs_dir.b1;
+     derivs["b2"] = tcs_dir.b2;
 
      std::map<std::string, decltype(derivs)> all_derivs;
      all_derivs["direct"] = std::move(derivs);
 
+#if 0
      derivs.clear();
-     derivs["d(a0)/dtheta"] = [&](double v) { return tcs_hd.d(tcs_hd.a0, v); };
-     derivs["d(a1)/dtheta"] = [&](double v) { return tcs_hd.d(tcs_hd.a1, v); };
-     derivs["d(a2)/dtheta"] = [&](double v) { return tcs_hd.d(tcs_hd.a2, v); };
-     derivs["d^2(a0)/dtheta^2"] = [&](double v) { return tcs_hd.d2(tcs_hd.a0, v); };
-     derivs["d^2(a1)/dtheta^2"] = [&](double v) { return tcs_hd.d2(tcs_hd.a1, v); };
-     derivs["d^2(a2)/dtheta^2"] = [&](double v) { return tcs_hd.d2(tcs_hd.a2, v); };
+     // derivs["d(a0)/dtheta"] = [&](double v) { return tcs_hd.d(tcs_hd.a0, v); };
+     // derivs["d(a1)/dtheta"] = [&](double v) { return tcs_hd.d(tcs_hd.a1, v); };
+     // derivs["d(a2)/dtheta"] = [&](double v) { return tcs_hd.d(tcs_hd.a2, v); };
+     // derivs["d^2(a0)/dtheta^2"] = [&](double v) { return tcs_hd.d2(tcs_hd.a0, v); };
+     // derivs["d^2(a1)/dtheta^2"] = [&](double v) { return tcs_hd.d2(tcs_hd.a1, v); };
+     // derivs["d^2(a2)/dtheta^2"] = [&](double v) { return tcs_hd.d2(tcs_hd.a2, v); };
+     derivs["a0"] = tcs_hd.a0;
+     derivs["a1"] = tcs_hd.a1;
+     derivs["a2"] = tcs_hd.a2;
+     derivs["b0"] = tcs_hd.b0;
+     derivs["b1"] = tcs_hd.b1;
+     derivs["b2"] = tcs_hd.b2;
+     all_derivs["hyperdual"] = std::move(derivs);
+#endif
+
+     derivs.clear();
+     derivs["a0"] = tcs_se.a0;
+     derivs["a1"] = tcs_se.a1;
+     derivs["a2"] = tcs_se.a2;
+     derivs["b0"] = tcs_se.b0;
+     derivs["b1"] = tcs_se.b1;
+     derivs["b2"] = tcs_se.b2;
 
      size_t max_name_len = 0;
      for (auto &deriv : derivs)
@@ -309,16 +494,16 @@ int main(int argc, char *argv[])
 	  max_name_len = std::max(max_name_len, deriv.first.length());
      }
 
-     all_derivs["hyperdual"] = std::move(derivs);
+     all_derivs["series"] = std::move(derivs);
      derivs.clear();
 
-     std::map<std::string, std::map<std::string, std::vector<double>>> results;
+     std::map<std::string, std::map<std::string, std::vector<RealType>>> results;
 
      for (auto &derivs : all_derivs)
      {
 	  for (auto &f : derivs.second)
 	  {
-	       std::vector<double> res;
+	       std::vector<RealType> res;
 	       std::transform(std::begin(eval_pts), std::end(eval_pts), std::back_inserter(res), f.second);
 	       results[derivs.first][f.first] = std::move(res);
 	  }
@@ -337,11 +522,15 @@ int main(int argc, char *argv[])
 	  std::cout << SEPARATOR << std::setw(WIDTH) << v;
      }
      std::cout << "\n";
-     for (unsigned int i = 0; i < max_name_len + (WIDTH + SEPARATOR.length()) * eval_pts.size(); ++i)
-     {
-	  std::cout << "-";
-     }
+
+#define print_line()							\
+     for (unsigned int i = 0; i < max_name_len + (WIDTH + SEPARATOR.length()) * eval_pts.size(); ++i) \
+     {									\
+	  std::cout << "-";						\
+     }									\
      std::cout << "\n";
+
+     print_line();
      for (auto &group : results)
      {
 	  for (auto &results : group.second)
@@ -353,6 +542,7 @@ int main(int argc, char *argv[])
 	       }
 	       std::cout << "\n";
 	  }
+	  print_line();
      }
 
      return 0;
