@@ -203,7 +203,7 @@ namespace rodrigues_formula
 	       }
 
 	       static T a2(T theta) {
-		    return (T(1) - cos(theta)) / pow(theta, 2);
+		    return (T(1) - cos(theta)) / (theta * theta);
 	       }
 
 	       static T da0(T theta) {
@@ -211,7 +211,7 @@ namespace rodrigues_formula
 	       }
 
 	       static T da1(T theta) {
-		    return (theta * cos(theta) - sin(theta)) / pow(theta, 2);
+		    return (theta * cos(theta) - sin(theta)) / (theta * theta);
 	       }
 
 	       static T da2(T theta) {
@@ -372,15 +372,24 @@ namespace rodrigues_formula
 
 	  protected:
 	       static constexpr T S_ONE = 1.0;
-	       static constexpr T S_THRESHOLD = 0.5;
+	       static constexpr T S_THRESHOLD = 0.25;
 	       static const int N_FACTORIALS = 15;
 	       static const std::array<T,N_FACTORIALS> S_INV_FACTORIALS;
 	       static class TrigonometricCoeffsImpl<T, CalculationMode::Direct> s_direct;
 
+#define theta_powers(theta)					\
+	       T theta2, theta4, theta6, theta8, theta10;	\
+	       theta2 = (theta) * (theta);			\
+	       theta4 = theta2 * theta2;			\
+	       theta6 = theta2 * theta4;			\
+	       theta8 = theta4 * theta4;			\
+	       theta10 = theta8 * theta2;			\
+
 	       static T ai(unsigned int i, T theta) {
 		    assert(i < 4);
 		    constexpr int N_STEPS = 6;
-		    T s[N_STEPS] = { 1, -pow(theta, 2), pow(theta, 4), pow(theta, 6), pow(theta, 8), pow(theta, 10) };
+		    theta_powers(theta);
+		    T s[N_STEPS] = { 1, -theta2, theta4, -theta6, theta8, -theta10 };
 		    for (unsigned int j = 0; j < N_STEPS; j++) {
 			 s[j] *= S_INV_FACTORIALS[2*j + i];
 		    }
@@ -395,7 +404,8 @@ namespace rodrigues_formula
 	       static T bi(unsigned int i, T theta) {
 		    assert(i < 3);
 		    constexpr int N_STEPS = 6;
-		    T s[N_STEPS] = { -2, 4*pow(theta, 2), -6*pow(theta, 4), 8*pow(theta, 6), -10*pow(theta, 8), 12*pow(theta, 10) };
+		    theta_powers(theta);
+		    T s[N_STEPS] = { -2, 4*theta2, -6*theta4, 8*theta6, -10*theta8, 12*theta10 };
 		    for (unsigned int j = 0; j < N_STEPS; j++)
 		    {
 			 s[j] *= S_INV_FACTORIALS[2 + 2*j + i];
@@ -432,8 +442,8 @@ int main(int argc, char *argv[])
      typedef rf::TrigonometricCoeffs<double, rf::CalculationMode::NumericHyperDual> TCsHD;
      typedef rf::TrigonometricCoeffs<RealType, rf::CalculationMode::SeriesExpansion> TCsSE;
 
-     const RealType STEP = 1e-3;
-     const int N_EVAL_PTS = 51;
+     const RealType STEP = 1e-2;
+     const int N_EVAL_PTS = 101;
      std::vector<RealType> eval_pts;
      int m;
      unsigned int i;
@@ -509,9 +519,9 @@ int main(int argc, char *argv[])
 	  }
      }
 
-     const int WIDTH = 10;
+     const int WIDTH = 14;
      std::cout << std::scientific;
-     std::cout << std::setprecision(3);
+     std::cout << std::setprecision(7);
      const std::string SEPARATOR(" | ");
      for (unsigned int i = 0; i < max_name_len; ++i)
      {
