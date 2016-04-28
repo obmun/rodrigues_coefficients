@@ -1,20 +1,3 @@
-/**
- * @file
- * @brief Evaluation of implementation of Rodrigues formula's trigonometric a_i coefficients using
- * hyper-dual numeric derivation.
- *
- * This file implements the a_i expressions (first equations of section 2.2 of the paper "On the
- * differentiation of the Rodrigues formula and its significance for the vector-like
- * parameterization of Reissner–Simo beam theory") using Fike's hyper-dual numerical derivation
- * method.
- *
- * For comparison, implements the expressions as well directly using the symbolic expressions for
- * the first order and second order derivatives.
- *
- * This code is written in C++11 and only makes uses of std library functions and the included
- * hyper-dual class as implemented by Fike. Build system is CMake.
- */
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -34,6 +17,8 @@ constexpr unsigned long int factorial(unsigned long int n)
 }
 
 /**
+ * @brief Namespace with the implementation of Ritto-Correa's Rodrigue's formula coefficients using
+ * different numerical methods.
  *
  * b_i = \frac{1}{\theta} \diff{a_i(\theta)}{\theta}
  * c_i = \frac{1}{\theta} \diff{b_i(\theta)}{\theta}
@@ -66,6 +51,12 @@ namespace rodrigues_formula
           };
      }
 
+     /**
+      * @brief Template class with the public interface for the coefficients implementation.
+      * @tparam T The underlying real type to be used (float, double)
+      * @tparam CalculationMode The calculation mode to be used. One of the \ref
+      * CalculationMode enum values.
+      */
      template < typename T, CalculationMode mode > class TrigonometricCoeffs
      {
      public:

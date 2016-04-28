@@ -3,6 +3,7 @@
  * Stanford University, Department of Aeronautics and Astronautics
  * 
  * Copyright (c) 2006 Jeffrey A. Fike
+ * Copyright (c) 2016 Jacobo Cabaleiro
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +33,9 @@
 
 /**
  * @brief Implementation of hyper-dual numbers
+ *
+ * Based on the original Fike code (http://adl.stanford.edu/hyperdual/hyperdual.h) but converted
+ * into a template and with a few very minor improvements.
  */
 template<typename Real>
 class Hyperdual

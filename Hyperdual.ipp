@@ -28,7 +28,7 @@ Hyperdual<Real>::Hyperdual(Real x1)
 }
 
 template<class Real>
-void Hyperdual<Real>::setvalues(Real x1,Real x2,Real x3,Real x4)
+void Hyperdual<Real>::setvalues(Real x1, Real x2, Real x3, Real x4)
 {
      f0 = x1;
      f1 = x2;
